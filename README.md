@@ -95,3 +95,12 @@ Info.plist                     bundle info + Markdown document type
 build.sh                       build / install script
 test.sh                        run the tests
 ```
+
+## License
+
+[MIT](LICENSE) © Nick Herro
+
+Bundled third-party code keeps its own license: [highlight.js](https://github.com/highlightjs/highlight.js)
+(BSD-3-Clause, `Resources/highlight.min.js`), [cmark-gfm](https://github.com/swiftlang/swift-cmark)
+(BSD-2-Clause, fetched by SwiftPM) and the [gemoji](https://github.com/github/gemoji) emoji data
+(MIT, `Resources/emoji.tsv`).
