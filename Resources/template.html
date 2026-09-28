@@ -1,0 +1,206 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<base href="">
+<meta name="color-scheme" content="light dark">
+<style>
+:root {
+  --fg: #1f2328;
+  --fg-muted: #59636e;
+  --bg: #ffffff;
+  --bg-subtle: #f6f8fa;
+  --border: #d1d9e0;
+  --border-muted: #d1d9e0b3;
+  --link: #0969da;
+  --code-bg: #818b981f;
+  --mark-bg: #fff8c5;
+  --blockquote: #59636e;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fg: #f0f6fc;
+    --fg-muted: #9198a1;
+    --bg: #0d1117;
+    --bg-subtle: #151b23;
+    --border: #3d444d;
+    --border-muted: #3d444db3;
+    --link: #4493f8;
+    --code-bg: #656c7633;
+    --mark-bg: #bb800926;
+    --blockquote: #9198a1;
+  }
+}
+/*HLJS_LIGHT*/
+/*HLJS_DARK*/
+
+html { background: var(--bg); }
+body {
+  margin: 0;
+  padding: 32px 40px 64px;
+  color: var(--fg);
+  background: var(--bg);
+  font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  word-wrap: break-word;
+}
+#content { max-width: 880px; margin: 0 auto; }
+#content > *:first-child { margin-top: 0 !important; }
+#content > *:last-child { margin-bottom: 0 !important; }
+
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+h1, h2, h3, h4, h5, h6 { margin: 24px 0 16px; font-weight: 600; line-height: 1.25; }
+h1 { font-size: 2em; padding-bottom: .3em; border-bottom: 1px solid var(--border-muted); }
+h2 { font-size: 1.5em; padding-bottom: .3em; border-bottom: 1px solid var(--border-muted); }
+h3 { font-size: 1.25em; }
+h4 { font-size: 1em; }
+h5 { font-size: .875em; }
+h6 { font-size: .85em; color: var(--fg-muted); }
+
+p, blockquote, ul, ol, dl, table, pre, details { margin: 0 0 16px; }
+hr { height: .25em; padding: 0; margin: 24px 0; background: var(--border); border: 0; }
+
+blockquote { padding: 0 1em; color: var(--blockquote); border-left: .25em solid var(--border); }
+blockquote > :first-child { margin-top: 0; }
+blockquote > :last-child { margin-bottom: 0; }
+
+ul, ol { padding-left: 2em; }
+li + li { margin-top: .25em; }
+li > p { margin-top: 16px; }
+ul ul, ul ol, ol ol, ol ul { margin-top: 0; margin-bottom: 0; }
+li.task-list-item, ul > li:has(> input[type=checkbox]) { list-style: none; }
+li > input[type=checkbox] { margin: 0 .35em .25em -1.4em; vertical-align: middle; }
+
+code, kbd, pre, samp {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 85%;
+}
+code {
+  padding: .2em .4em;
+  margin: 0;
+  background: var(--code-bg);
+  border-radius: 6px;
+  white-space: break-spaces;
+}
+pre {
+  padding: 16px;
+  overflow: auto;
+  line-height: 1.45;
+  background: var(--bg-subtle);
+  border-radius: 6px;
+}
+pre code {
+  padding: 0;
+  font-size: 100%;
+  background: transparent;
+  white-space: pre;
+  border-radius: 0;
+}
+pre code.hljs { padding: 0; background: transparent; }
+pre.front-matter { border: 1px dashed var(--border); }
+kbd {
+  display: inline-block;
+  padding: 3px 5px;
+  font-size: 11px;
+  line-height: 10px;
+  vertical-align: middle;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-bottom-color: var(--border);
+  border-radius: 6px;
+  box-shadow: inset 0 -1px 0 var(--border);
+}
+
+table { border-spacing: 0; border-collapse: collapse; display: block; width: max-content; max-width: 100%; overflow: auto; }
+table th { font-weight: 600; }
+table th, table td { padding: 6px 13px; border: 1px solid var(--border); }
+table tr { background: var(--bg); border-top: 1px solid var(--border-muted); }
+table tr:nth-child(2n) { background: var(--bg-subtle); }
+
+img { max-width: 100%; box-sizing: content-box; background: transparent; }
+mark { background: var(--mark-bg); color: inherit; }
+del { color: var(--fg-muted); }
+
+.footnotes { font-size: 12px; color: var(--fg-muted); border-top: 1px solid var(--border); margin-top: 32px; padding-top: 8px; }
+
+/* Anchor link that appears on heading hover */
+h1, h2, h3, h4, h5, h6 { position: relative; }
+.anchor { position: absolute; right: 100%; padding-right: 6px; opacity: 0; color: var(--fg-muted); font-weight: 400; }
+h1:hover .anchor, h2:hover .anchor, h3:hover .anchor, h4:hover .anchor, h5:hover .anchor, h6:hover .anchor { opacity: 1; text-decoration: none; }
+
+.error { color: #d1242f; font-family: ui-monospace, Menlo, monospace; }
+</style>
+<script>
+/*HLJS_JS*/
+</script>
+<script>
+(function () {
+  function slugify(text) {
+    return text.trim().toLowerCase()
+      .replace(/[^\p{L}\p{N}\s_-]/gu, '')
+      .replace(/\s/g, '-');
+  }
+
+  function addHeadingIds(root) {
+    const seen = Object.create(null);
+    root.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach(function (h) {
+      if (h.id) return;
+      let slug = slugify(h.textContent) || 'section';
+      if (seen[slug] !== undefined) { seen[slug] += 1; slug = slug + '-' + seen[slug]; }
+      else { seen[slug] = 0; }
+      h.id = slug;
+      const a = document.createElement('a');
+      a.className = 'anchor';
+      a.href = '#' + slug;
+      a.textContent = '#';
+      a.setAttribute('aria-hidden', 'true');
+      h.insertBefore(a, h.firstChild);
+    });
+  }
+
+  function highlight(root) {
+    if (!window.hljs) return;
+    root.querySelectorAll('pre code').forEach(function (el) {
+      const m = /language-([\w+#-]+)/.exec(el.className);
+      if (!m || !hljs.getLanguage(m[1])) return; // only highlight when the language is known: fast + no bad guesses
+      hljs.highlightElement(el);
+    });
+  }
+
+  function scrollToHash(hash) {
+    if (!hash || hash === '#') { window.scrollTo(0, 0); return; }
+    const id = decodeURIComponent(hash.slice(1));
+    const el = document.getElementById(id) || document.getElementsByName(id)[0];
+    if (el) el.scrollIntoView();
+  }
+
+  window.mdv = {
+    update: function (html, baseHref, hash) {
+      document.querySelector('base').href = baseHref;
+      const content = document.getElementById('content');
+      const y = window.scrollY;
+      const first = !content.hasChildNodes();
+      content.innerHTML = html;
+      addHeadingIds(content);
+      highlight(content);
+      if (first && hash) scrollToHash(hash);
+      else window.scrollTo(0, y); // keep position on live reload
+    }
+  };
+
+  // In-page anchors: resolve against the page, not the <base> dir.
+  document.addEventListener('click', function (e) {
+    const a = e.target.closest && e.target.closest('a[href^="#"]');
+    if (!a) return;
+    e.preventDefault();
+    scrollToHash(a.getAttribute('href'));
+  });
+})();
+</script>
+</head>
+<body>
+<article id="content"></article>
+</body>
+</html>
