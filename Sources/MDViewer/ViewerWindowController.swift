@@ -1,4 +1,5 @@
 import AppKit
+import MDViewerCore
 import WebKit
 
 final class ViewerWindowController: NSWindowController, WKNavigationDelegate, NSSearchFieldDelegate {
@@ -128,15 +129,9 @@ final class ViewerWindowController: NSWindowController, WKNavigationDelegate, NS
         )
     }
 
-    /// The enclosing git repo, so `/path` links and images resolve from the repo root like on GitHub.
-    private lazy var repoRoot: URL? = {
-        var dir = markdownDocument?.fileURL?.deletingLastPathComponent()
-        while let d = dir, d.path != "/" {
-            if FileManager.default.fileExists(atPath: d.appendingPathComponent(".git").path) { return d }
-            dir = d.deletingLastPathComponent()
-        }
-        return nil
-    }()
+    private lazy var repoRoot: URL? = markdownDocument?.fileURL.flatMap {
+        RepoRoot.find(from: $0.deletingLastPathComponent())
+    }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         guard !shellLoaded else { return }

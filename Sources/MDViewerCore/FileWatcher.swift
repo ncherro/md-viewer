@@ -3,13 +3,14 @@ import Foundation
 /// Watches a single file for changes. Handles editors that save atomically
 /// (write temp file + rename over the original), which replaces the inode and
 /// would otherwise silently break a plain vnode watch.
-final class FileWatcher {
+public final class FileWatcher {
     private let url: URL
     private let onChange: () -> Void
     private var source: DispatchSourceFileSystemObject?
     private var pending: DispatchWorkItem?
 
-    init(url: URL, onChange: @escaping () -> Void) {
+    /// `onChange` is called on the main queue.
+    public init(url: URL, onChange: @escaping () -> Void) {
         self.url = url
         self.onChange = onChange
         arm()

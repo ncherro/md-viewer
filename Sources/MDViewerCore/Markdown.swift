@@ -3,14 +3,14 @@ import cmark_gfm
 import cmark_gfm_extensions
 
 /// Renders GitHub-flavored Markdown to HTML using cmark-gfm (native C, very fast).
-enum Markdown {
+public enum Markdown {
     private static let extensionNames = ["table", "strikethrough", "autolink", "tagfilter", "tasklist"]
 
     private static let registered: Void = {
         cmark_gfm_core_extensions_ensure_registered()
     }()
 
-    static func render(_ source: String) -> String {
+    public static func render(_ source: String, emoji: EmojiTable = .bundled) -> String {
         _ = registered
         let (frontMatter, body) = splitFrontMatter(source)
 
@@ -29,7 +29,7 @@ enum Markdown {
         }
         guard let doc = cmark_parser_finish(parser) else { return "" }
         defer { cmark_node_free(doc) }
-        replaceEmojiShortcodes(in: doc)
+        replaceEmojiShortcodes(in: doc, emoji: emoji)
 
         guard let cHTML = cmark_render_html(doc, options, cmark_parser_get_syntax_extensions(parser)) else { return "" }
         defer { free(cHTML) }
@@ -41,7 +41,7 @@ enum Markdown {
 
     /// Swaps `:shortcode:` for emoji in text nodes only, so code spans, code blocks
     /// and raw HTML are left alone (matching GitHub).
-    private static func replaceEmojiShortcodes(in doc: UnsafeMutablePointer<cmark_node>) {
+    private static func replaceEmojiShortcodes(in doc: UnsafeMutablePointer<cmark_node>, emoji: EmojiTable) {
         // The parser can split a run of text at ':' into several nodes; merge them first.
         cmark_consolidate_text_nodes(doc)
         guard let iter = cmark_iter_new(doc) else { return }
@@ -52,7 +52,7 @@ enum Markdown {
                   cmark_node_get_type(node) == CMARK_NODE_TEXT,
                   let literal = cmark_node_get_literal(node),
                   !isAutolinkText(node, literal),
-                  let replaced = Emoji.replaceShortcodes(in: String(cString: literal))
+                  let replaced = emoji.replaceShortcodes(in: String(cString: literal))
             else { continue }
             cmark_node_set_literal(node, replaced)
         }

@@ -25,6 +25,19 @@ from the app menu → **Make Default Markdown Viewer**.
 To regenerate the app icon: `swift scripts/make-icon.swift`.
 To refresh the emoji list from GitHub: `scripts/update-emoji.sh`.
 
+## Tests
+
+```sh
+./test.sh
+```
+
+Uses Swift Testing. `test.sh` wraps `swift test`, adding the search paths needed when only the
+Command Line Tools are installed (with Xcode it's plain `swift test`). The tests cover the
+`MDViewerCore` library: GFM rendering and front matter, emoji shortcodes (including where they
+must *not* be replaced), the file watcher against real editor save strategies (in-place write,
+atomic rename, delete + recreate, bursts), and git repo-root lookup. The page-side JavaScript
+in `template.html` (image path fixes, `<picture>` handling, heading anchors) isn't covered yet.
+
 ## Keyboard shortcuts
 
 | Action                        | Shortcut        |
@@ -59,20 +72,24 @@ watches the Markdown file only — press ⌘R after replacing an image.
 ## Project layout
 
 ```
-Sources/MDViewer/
+Sources/MDViewerCore/          testable logic (no UI)
+  Markdown.swift               cmark-gfm rendering + front matter
+  Emoji.swift                  :shortcode: → emoji
+  FileWatcher.swift            live reload, survives atomic saves
+  RepoRoot.swift               git repo-root lookup for /path links and images
+Sources/MDViewer/              the app
   main.swift                   entry point (`--make-default` registers the app and exits)
   AppDelegate.swift            appearance, zoom, default-handler registration
   MainMenu.swift               menu bar (built in code, no nib)
   MarkdownDocument.swift       read-only NSDocument
-  ViewerWindowController.swift web view, find bar, link handling, repo-root lookup
-  FileWatcher.swift            live reload, survives atomic saves
-  Markdown.swift               cmark-gfm rendering + front matter
-  Emoji.swift                  :shortcode: → emoji
+  ViewerWindowController.swift web view, find bar, link handling
   Template.swift               builds the HTML shell once per launch
+Tests/MDViewerCoreTests/       Swift Testing suites
 Resources/
   template.html                themes (CSS variables), styles and the page-side JS
   highlight.min.js             syntax highlighting (colors come from the theme in template.html)
   emoji.tsv                    shortcode table (from scripts/update-emoji.sh)
 Info.plist                     bundle info + Markdown document type
 build.sh                       build / install script
+test.sh                        run the tests
 ```
