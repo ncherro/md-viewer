@@ -6,6 +6,7 @@ A small, fast, read-only Markdown viewer for macOS.
 - Light / dark / system appearance
 - Live reload when the file changes on disk (keeps scroll position; handles editors that save atomically)
 - Syntax highlighting for fenced code blocks with a language (highlight.js, bundled — no network needed)
+- GitHub-style emoji shortcodes (`:tada:` → 🎉, `:+1:` → 👍) using GitHub's own [gemoji](https://github.com/github/gemoji) list; left alone in code, URLs and words like `a:b:c`
 - YAML front matter shown as a code block instead of rendering as a stray rule + heading
 - Links to other `.md` files open in the viewer; web links open in your browser
 
@@ -22,6 +23,7 @@ After installing, `open path/to/file.md` opens in MD Viewer. You can also re-ass
 from the app menu → **Make Default Markdown Viewer**.
 
 To regenerate the app icon: `swift scripts/make-icon.swift`.
+To refresh the emoji list from GitHub: `scripts/update-emoji.sh`.
 
 ## Keyboard shortcuts
 
@@ -65,10 +67,12 @@ Sources/MDViewer/
   ViewerWindowController.swift web view, find bar, link handling, repo-root lookup
   FileWatcher.swift            live reload, survives atomic saves
   Markdown.swift               cmark-gfm rendering + front matter
+  Emoji.swift                  :shortcode: → emoji
   Template.swift               builds the HTML shell once per launch
 Resources/
   template.html                CSS (light/dark) and the page-side JS
   highlight.min.js, hljs-*.css syntax highlighting
+  emoji.tsv                    shortcode table (from scripts/update-emoji.sh)
 Info.plist                     bundle info + Markdown document type
 build.sh                       build / install script
 ```
