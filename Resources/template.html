@@ -130,6 +130,10 @@ h1, h2, h3, h4, h5, h6 { position: relative; }
 .anchor { position: absolute; right: 100%; padding-right: 6px; opacity: 0; color: var(--fg-muted); font-weight: 400; }
 h1:hover .anchor, h2:hover .anchor, h3:hover .anchor, h4:hover .anchor, h5:hover .anchor, h6:hover .anchor { opacity: 1; text-decoration: none; }
 
+/* GitHub's theme-specific image fragments */
+@media (prefers-color-scheme: dark) { img[src$="#gh-light-mode-only"] { display: none; } }
+@media not (prefers-color-scheme: dark) { img[src$="#gh-dark-mode-only"] { display: none; } }
+
 .error { color: #d1242f; font-family: ui-monospace, Menlo, monospace; }
 </style>
 <script>
@@ -176,13 +180,59 @@ h1:hover .anchor, h2:hover .anchor, h3:hover .anchor, h4:hover .anchor, h5:hover
     if (el) el.scrollIntoView();
   }
 
+  // GitHub-style image paths: `/x.png` is relative to the repo root, and
+  // github.com/.../blob/... URLs point at an HTML page rather than the image.
+  function fixImage(img, repoRoot) {
+    const src = img.getAttribute('src') || '';
+    const blob = /^https:\/\/github\.com\/([^/]+\/[^/]+)\/blob\/(.+)$/.exec(src);
+    if (blob) { img.src = 'https://github.com/' + blob[1] + '/raw/' + blob[2]; return; }
+    if (repoRoot && src.startsWith('/') && !src.startsWith('//')) {
+      img.onerror = function () { img.onerror = null; img.src = 'file://' + src; }; // fall back to an absolute file path
+      img.src = repoRoot + src.slice(1);
+    }
+  }
+
+  // WebKit picks <picture> sources using the system theme, not the app's
+  // Light/Dark override, so choose the source ourselves.
+  function pickPictureSources(root, repoRoot) {
+    root.querySelectorAll('picture').forEach(function (pic) {
+      const img = pic.querySelector('img');
+      if (!img) return;
+      if (!img.dataset.fallback) img.dataset.fallback = img.getAttribute('src') || '';
+      // Move srcset aside so WebKit doesn't override our choice.
+      pic.querySelectorAll('source[srcset]').forEach(function (s) {
+        s.dataset.srcset = s.getAttribute('srcset');
+        s.removeAttribute('srcset');
+      });
+      let chosen = img.dataset.fallback;
+      for (const source of pic.querySelectorAll('source[data-srcset]')) {
+        if (!source.media || window.matchMedia(source.media).matches) {
+          chosen = source.dataset.srcset.trim().split(/\s+/)[0];
+          break;
+        }
+      }
+      img.setAttribute('src', chosen);
+      fixImage(img, repoRoot);
+    });
+  }
+
+  let currentRepoRoot = '';
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () {
+    pickPictureSources(document.getElementById('content'), currentRepoRoot);
+  });
+
   window.mdv = {
-    update: function (html, baseHref, hash) {
+    update: function (html, baseHref, repoRoot, hash) {
       document.querySelector('base').href = baseHref;
       const content = document.getElementById('content');
       const y = window.scrollY;
       const first = !content.hasChildNodes();
       content.innerHTML = html;
+      currentRepoRoot = repoRoot;
+      content.querySelectorAll('img').forEach(function (img) {
+        if (!img.closest('picture')) fixImage(img, repoRoot);
+      });
+      pickPictureSources(content, repoRoot);
       addHeadingIds(content);
       highlight(content);
       if (first && hash) scrollToHash(hash);

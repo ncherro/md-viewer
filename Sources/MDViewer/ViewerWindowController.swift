@@ -112,15 +112,25 @@ final class ViewerWindowController: NSWindowController, WKNavigationDelegate, NS
 
         let html = Markdown.render(doc.text)
         let base = url.deletingLastPathComponent().absoluteString
-        let args: [String: Any] = ["html": html, "base": base, "hash": ""]
+        let args: [String: Any] = ["html": html, "base": base, "root": repoRoot?.absoluteString ?? "", "hash": ""]
         webView.callAsyncJavaScript(
-            "mdv.update(html, base, hash)",
+            "mdv.update(html, base, root, hash)",
             arguments: args,
             in: nil,
             in: .page,
             completionHandler: nil
         )
     }
+
+    /// The enclosing git repo, so `/path` links and images resolve from the repo root like on GitHub.
+    private lazy var repoRoot: URL? = {
+        var dir = markdownDocument?.fileURL?.deletingLastPathComponent()
+        while let d = dir, d.path != "/" {
+            if FileManager.default.fileExists(atPath: d.appendingPathComponent(".git").path) { return d }
+            dir = d.deletingLastPathComponent()
+        }
+        return nil
+    }()
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         guard !shellLoaded else { return }
@@ -140,13 +150,19 @@ final class ViewerWindowController: NSWindowController, WKNavigationDelegate, NS
         }
         decisionHandler(.cancel)
 
-        if url.isFileURL, ["md", "markdown", "mdown", "mkd", "mkdn", "mdwn"].contains(url.pathExtension.lowercased()) {
+        var target = url
+        if url.isFileURL, !FileManager.default.fileExists(atPath: url.path), let root = repoRoot {
+            // GitHub-style repo-root link, e.g. [docs](/docs/guide.md)
+            target = root.appendingPathComponent(url.path)
+        }
+
+        if target.isFileURL, ["md", "markdown", "mdown", "mkd", "mkdn", "mdwn"].contains(target.pathExtension.lowercased()) {
             // Link to another Markdown file: open it in this app.
-            NSDocumentController.shared.openDocument(withContentsOf: url, display: true) { _, _, error in
+            NSDocumentController.shared.openDocument(withContentsOf: target, display: true) { _, _, error in
                 if let error { NSApp.presentError(error) }
             }
         } else {
-            NSWorkspace.shared.open(url)
+            NSWorkspace.shared.open(target)
         }
     }
 
