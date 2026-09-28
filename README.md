@@ -1,5 +1,7 @@
 # MD Viewer
 
+[![Tests](https://github.com/ncherro/md-viewer/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/ncherro/md-viewer/actions/workflows/test.yml)
+
 A small, fast, read-only Markdown viewer for macOS.
 
 - Native AppKit + WKWebView; Markdown parsed by [cmark-gfm](https://github.com/swiftlang/swift-cmark) (GitHub-flavored: tables, task lists, strikethrough, autolinks, footnotes)
