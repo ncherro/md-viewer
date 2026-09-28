@@ -3,7 +3,7 @@
 A small, fast, read-only Markdown viewer for macOS.
 
 - Native AppKit + WKWebView; Markdown parsed by [cmark-gfm](https://github.com/swiftlang/swift-cmark) (GitHub-flavored: tables, task lists, strikethrough, autolinks, footnotes)
-- Light / dark / system appearance
+- Light / dark / system appearance — Rosé Pine Dawn (soft cream) and One Dark Pro themes
 - Live reload when the file changes on disk (keeps scroll position; handles editors that save atomically)
 - Syntax highlighting for fenced code blocks with a language (highlight.js, bundled — no network needed)
 - GitHub-style emoji shortcodes (`:tada:` → 🎉, `:+1:` → 👍) using GitHub's own [gemoji](https://github.com/github/gemoji) list; left alone in code, URLs and words like `a:b:c`
@@ -70,8 +70,8 @@ Sources/MDViewer/
   Emoji.swift                  :shortcode: → emoji
   Template.swift               builds the HTML shell once per launch
 Resources/
-  template.html                CSS (light/dark) and the page-side JS
-  highlight.min.js, hljs-*.css syntax highlighting
+  template.html                themes (CSS variables), styles and the page-side JS
+  highlight.min.js             syntax highlighting (colors come from the theme in template.html)
   emoji.tsv                    shortcode table (from scripts/update-emoji.sh)
 Info.plist                     bundle info + Markdown document type
 build.sh                       build / install script

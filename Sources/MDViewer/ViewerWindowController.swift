@@ -26,6 +26,12 @@ final class ViewerWindowController: NSWindowController, WKNavigationDelegate, NS
         )
         window.tabbingMode = .preferred
         window.minSize = NSSize(width: 320, height: 240)
+        // Match the page themes in template.html so there's no flash while the page loads.
+        window.backgroundColor = NSColor(name: nil) { appearance in
+            appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+                ? NSColor(srgbRed: 0x28 / 255.0, green: 0x2c / 255.0, blue: 0x34 / 255.0, alpha: 1) // One Dark Pro
+                : NSColor(srgbRed: 0xfa / 255.0, green: 0xf4 / 255.0, blue: 0xed / 255.0, alpha: 1) // Rosé Pine Dawn
+        }
         super.init(window: window)
 
         window.setFrameAutosaveName("MDViewerWindow")

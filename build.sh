@@ -12,7 +12,7 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/MDViewer"
 cp Info.plist "$APP/Contents/Info.plist"
-cp Resources/template.html Resources/highlight.min.js Resources/hljs-light.css Resources/hljs-dark.css Resources/emoji.tsv "$APP/Contents/Resources/"
+cp Resources/template.html Resources/highlight.min.js Resources/emoji.tsv "$APP/Contents/Resources/"
 [ -f Resources/AppIcon.icns ] && cp Resources/AppIcon.icns "$APP/Contents/Resources/"
 codesign --force --sign - "$APP" 2>/dev/null
 echo "Built $APP"
