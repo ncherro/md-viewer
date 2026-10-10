@@ -43,6 +43,12 @@ import Testing
         #expect(html.contains("<pre><code class=\"language-swift\">let x = 1\n</code></pre>"))
     }
 
+    // template.html finds diagrams by `pre > code.language-mermaid`; the source must arrive escaped, not as markup.
+    @Test func mermaidBlockKeepsLanguageClassAndEscapedSource() {
+        let html = Fixtures.render("```mermaid\nflowchart LR\n  A[\"<b>A</b>\"] --> B\n```")
+        #expect(html.contains("<pre><code class=\"language-mermaid\">flowchart LR\n  A[&quot;&lt;b&gt;A&lt;/b&gt;&quot;] --&gt; B\n</code></pre>"))
+    }
+
     @Test func rawHTMLIsAllowed() {
         let html = Fixtures.render("<img src=\"pic.png\" width=\"60\">")
         #expect(html.contains("<img src=\"pic.png\" width=\"60\">"))
