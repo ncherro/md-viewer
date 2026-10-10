@@ -8,6 +8,8 @@ A small, fast, read-only Markdown viewer for macOS.
 - Light / dark / system appearance — Rosé Pine Dawn (soft cream) and One Dark Pro themes
 - Live reload when the file changes on disk (keeps scroll position; handles editors that save atomically)
 - Syntax highlighting for fenced code blocks with a language (highlight.js, bundled — no network needed)
+- Mermaid diagrams in ` ```mermaid ` blocks, as on GitHub, themed to match light/dark (bundled, loaded only
+  when a document has a diagram). Wide diagrams keep their natural size and scroll sideways
 - GitHub-style emoji shortcodes (`:tada:` → 🎉, `:+1:` → 👍) using GitHub's own [gemoji](https://github.com/github/gemoji) list; left alone in code, URLs and words like `a:b:c`
 - YAML front matter shown as a code block instead of rendering as a stray rule + heading
 - Links to other `.md` files open in the viewer; web links open in your browser
@@ -38,7 +40,8 @@ Command Line Tools are installed (with Xcode it's plain `swift test`). The tests
 `MDViewerCore` library: GFM rendering and front matter, emoji shortcodes (including where they
 must *not* be replaced), the file watcher against real editor save strategies (in-place write,
 atomic rename, delete + recreate, bursts), and git repo-root lookup. The page-side JavaScript
-in `template.html` (image path fixes, `<picture>` handling, heading anchors) isn't covered yet.
+in `template.html` (image path fixes, `<picture>` handling, heading anchors, Mermaid rendering) isn't
+covered yet.
 
 ## Keyboard shortcuts
 
@@ -90,6 +93,7 @@ Tests/MDViewerCoreTests/       Swift Testing suites
 Resources/
   template.html                themes (CSS variables), styles and the page-side JS
   highlight.min.js             syntax highlighting (colors come from the theme in template.html)
+  mermaid.min.js               Mermaid diagrams (v12.1.0, from the npm package's dist/)
   emoji.tsv                    shortcode table (from scripts/update-emoji.sh)
 Info.plist                     bundle info + Markdown document type
 build.sh                       build / install script
@@ -101,6 +105,7 @@ test.sh                        run the tests
 [MIT](LICENSE) © Nick Herro
 
 Bundled third-party code keeps its own license: [highlight.js](https://github.com/highlightjs/highlight.js)
-(BSD-3-Clause, `Resources/highlight.min.js`), [cmark-gfm](https://github.com/swiftlang/swift-cmark)
+(BSD-3-Clause, `Resources/highlight.min.js`), [Mermaid](https://github.com/mermaid-js/mermaid)
+(MIT, `Resources/mermaid.min.js`), [cmark-gfm](https://github.com/swiftlang/swift-cmark)
 (BSD-2-Clause, fetched by SwiftPM) and the [gemoji](https://github.com/github/gemoji) emoji data
 (MIT, `Resources/emoji.tsv`).

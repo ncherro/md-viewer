@@ -179,6 +179,11 @@ h1:hover .anchor, h2:hover .anchor, h3:hover .anchor, h4:hover .anchor, h5:hover
 @media not (prefers-color-scheme: dark) { img[src$="#gh-dark-mode-only"] { display: none; } }
 
 .error { color: #d1242f; font-family: ui-monospace, Menlo, monospace; }
+
+/* Mermaid diagrams render at natural size; wide ones scroll sideways rather than shrinking the text */
+.mermaid-diagram { margin-bottom: 16px; overflow-x: auto; }
+.mermaid-diagram svg { display: block; margin: 0 auto; }
+.mermaid-diagram .error { margin: 0 0 8px; white-space: pre-wrap; }
 </style>
 <script>
 /*HLJS_JS*/
@@ -214,6 +219,119 @@ h1:hover .anchor, h2:hover .anchor, h3:hover .anchor, h4:hover .anchor, h5:hover
       const m = /language-([\w+#-]+)/.exec(el.className);
       if (!m || !hljs.getLanguage(m[1])) return; // only highlight when the language is known: fast + no bad guesses
       hljs.highlightElement(el);
+    });
+  }
+
+  // Mermaid: ```mermaid blocks become diagrams, as on GitHub. The library is
+  // ~5 MB, so it's loaded from the app bundle on first use rather than inlined.
+  const MERMAID_URL = '/*MERMAID_URL*/';
+  let mermaidLoading = null;
+  let diagramSeq = 0;
+  let renderPass = 0;
+  const svgCache = new Map(); // theme + source → svg, so live reload doesn't flicker or jump
+
+  function loadMermaid() {
+    if (!mermaidLoading) {
+      mermaidLoading = new Promise(function (resolve, reject) {
+        const s = document.createElement('script');
+        s.src = MERMAID_URL;
+        s.onload = function () { resolve(window.mermaid); };
+        s.onerror = function () { mermaidLoading = null; reject(new Error('Could not load ' + MERMAID_URL)); };
+        document.head.appendChild(s);
+      });
+    }
+    return mermaidLoading;
+  }
+
+  // Colors come from the page theme, so diagrams match Rosé Pine Dawn / One Dark Pro.
+  function mermaidConfig() {
+    const css = getComputedStyle(document.documentElement);
+    const v = function (name) { return css.getPropertyValue(name).trim(); };
+    return {
+      startOnLoad: false,
+      securityLevel: 'strict',
+      suppressErrorRendering: true,
+      theme: 'base',
+      fontFamily: getComputedStyle(document.body).fontFamily,
+      themeVariables: {
+        darkMode: isDark(),
+        background: v('--bg'),
+        primaryColor: v('--code-bg'),
+        primaryTextColor: v('--fg-strong'),
+        primaryBorderColor: v('--border'),
+        secondaryColor: v('--code-bg'),
+        tertiaryColor: v('--bg'),
+        lineColor: v('--fg-muted'),
+        textColor: v('--fg'),
+        clusterBkg: v('--bg-subtle'),
+        clusterBorder: v('--border'),
+        edgeLabelBackground: v('--bg'),
+      },
+    };
+  }
+
+  function isDark() { return window.matchMedia('(prefers-color-scheme: dark)').matches; }
+
+  function showSvg(el, svg) {
+    el.innerHTML = svg;
+    // Natural size: mermaid's default width="100%" shrinks wide diagrams until the text is unreadable.
+    const s = el.querySelector('svg');
+    const box = s && s.viewBox && s.viewBox.baseVal;
+    if (box && box.width) { s.style.maxWidth = 'none'; s.setAttribute('width', box.width); s.setAttribute('height', box.height); }
+  }
+
+  // Swaps each mermaid code block for a placeholder that keeps the source (shown until the
+  // diagram renders, or if it fails). Cached diagrams go in straight away.
+  function prepareDiagrams(root) {
+    const theme = isDark() ? 'dark' : 'light';
+    root.querySelectorAll('pre > code.language-mermaid').forEach(function (code) {
+      const pre = code.parentNode;
+      const div = document.createElement('div');
+      div.className = 'mermaid-diagram';
+      div.dataset.source = code.textContent;
+      const cached = svgCache.get(theme + '\n' + div.dataset.source);
+      if (cached) showSvg(div, cached);
+      else div.appendChild(pre.cloneNode(true));
+      pre.replaceWith(div);
+    });
+  }
+
+  function renderDiagrams(root, force) {
+    const blocks = Array.from(root.querySelectorAll('.mermaid-diagram'))
+      .filter(function (el) { return force || !el.querySelector('svg'); });
+    if (!blocks.length) return Promise.resolve();
+    const pass = ++renderPass;
+    return loadMermaid().then(async function (mermaid) {
+      const theme = isDark() ? 'dark' : 'light';
+      mermaid.initialize(mermaidConfig());
+      for (const el of blocks) {
+        if (pass !== renderPass) return; // newer content or theme arrived; that pass takes over
+        const source = el.dataset.source;
+        try {
+          const result = await mermaid.render('mdv-mermaid-' + (++diagramSeq), source);
+          if (pass !== renderPass) return;
+          if (svgCache.size > 50) svgCache.clear();
+          svgCache.set(theme + '\n' + source, result.svg);
+          showSvg(el, result.svg);
+        } catch (err) {
+          const msg = document.createElement('pre');
+          msg.className = 'error';
+          msg.textContent = 'Mermaid: ' + ((err && err.message) || err);
+          const src = document.createElement('pre');
+          const code = document.createElement('code');
+          code.textContent = source;
+          src.appendChild(code);
+          el.replaceChildren(msg, src);
+        }
+      }
+    }).catch(function (err) {
+      blocks.forEach(function (el) {
+        if (el.querySelector('.error')) return;
+        const msg = document.createElement('pre');
+        msg.className = 'error';
+        msg.textContent = String((err && err.message) || err);
+        el.insertBefore(msg, el.firstChild);
+      });
     });
   }
 
@@ -262,7 +380,9 @@ h1:hover .anchor, h2:hover .anchor, h3:hover .anchor, h4:hover .anchor, h5:hover
 
   let currentRepoRoot = '';
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () {
-    pickPictureSources(document.getElementById('content'), currentRepoRoot);
+    const content = document.getElementById('content');
+    pickPictureSources(content, currentRepoRoot);
+    renderDiagrams(content, true);
   });
 
   window.mdv = {
@@ -278,9 +398,15 @@ h1:hover .anchor, h2:hover .anchor, h3:hover .anchor, h4:hover .anchor, h5:hover
       });
       pickPictureSources(content, repoRoot);
       addHeadingIds(content);
+      prepareDiagrams(content);
       highlight(content);
-      if (first && hash) scrollToHash(hash);
-      else window.scrollTo(0, y); // keep position on live reload
+      const restore = first && hash
+        ? function () { scrollToHash(hash); }
+        : function () { window.scrollTo(0, y); }; // keep position on live reload
+      restore();
+      // Diagrams change the page height once they render; restore again, but not if the user has scrolled since.
+      const before = window.scrollY;
+      renderDiagrams(content, false).then(function () { if (window.scrollY === before) restore(); });
     }
   };
 
