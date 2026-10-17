@@ -5,7 +5,10 @@
 A small, fast, read-only Markdown viewer for macOS.
 
 - Native AppKit + WKWebView; Markdown parsed by [cmark-gfm](https://github.com/swiftlang/swift-cmark) (GitHub-flavored: tables, task lists, strikethrough, autolinks, footnotes)
-- Light / dark / system appearance — Rosé Pine Dawn (soft cream) and One Dark Pro themes
+- Light / dark / system appearance, with a choice of color themes for each (Settings… ⌘,, with live previews).
+  Defaults are Rosé Pine Dawn (soft cream) and One Dark Pro; also GitHub, One Light, Solarized, Catppuccin,
+  Gruvbox, Dracula, Nord, Tokyo Night and Rosé Pine
+- Open files with File → Open…, or drag `.md` files onto a window (or the Dock icon)
 - Live reload when the file changes on disk (keeps scroll position; handles editors that save atomically)
 - Syntax highlighting for fenced code blocks with a language (highlight.js, bundled — no network needed)
 - Mermaid diagrams in ` ```mermaid ` blocks, as on GitHub, themed to match light/dark (bundled, loaded only
@@ -38,7 +41,7 @@ To refresh the emoji list from GitHub: `scripts/update-emoji.sh`.
 Uses Swift Testing. `test.sh` wraps `swift test`, adding the search paths needed when only the
 Command Line Tools are installed (with Xcode it's plain `swift test`). The tests cover the
 `MDViewerCore` library: GFM rendering and front matter, emoji shortcodes (including where they
-must *not* be replaced), the file watcher against real editor save strategies (in-place write,
+must *not* be replaced), the theme palettes, the file watcher against real editor save strategies (in-place write,
 atomic rename, delete + recreate, bursts), and git repo-root lookup. The page-side JavaScript
 in `template.html` (image path fixes, `<picture>` handling, heading anchors, Mermaid rendering) isn't
 covered yet.
@@ -48,6 +51,7 @@ covered yet.
 | Action                        | Shortcut        |
 |-------------------------------|-----------------|
 | Open                          | ⌘O              |
+| Settings (themes)             | ⌘,              |
 | Reload                        | ⌘R              |
 | Find / next / previous        | ⌘F / ⌘G / ⇧⌘G   |
 | Zoom in / out / actual size   | ⌘= / ⌘- / ⌘0    |
@@ -82,16 +86,20 @@ Sources/MDViewerCore/          testable logic (no UI)
   Emoji.swift                  :shortcode: → emoji
   FileWatcher.swift            live reload, survives atomic saves
   RepoRoot.swift               git repo-root lookup for /path links and images
+  Theme.swift                  color themes → CSS variables
 Sources/MDViewer/              the app
   main.swift                   entry point (`--make-default` registers the app and exits)
   AppDelegate.swift            appearance, zoom, default-handler registration
   MainMenu.swift               menu bar (built in code, no nib)
   MarkdownDocument.swift       read-only NSDocument
   ViewerWindowController.swift web view, find bar, link handling
-  Template.swift               builds the HTML shell once per launch
+  ViewerWebView.swift          WKWebView subclass: drag-and-drop of .md files
+  SettingsWindowController.swift  theme pickers with light/dark previews
+  ThemeSettings.swift          saved theme choices; notifies open windows
+  Template.swift               builds the HTML shell (rebuilt when the theme changes)
 Tests/MDViewerCoreTests/       Swift Testing suites
 Resources/
-  template.html                themes (CSS variables), styles and the page-side JS
+  template.html                styles and the page-side JS (colors come from Theme.swift)
   highlight.min.js             syntax highlighting (colors come from the theme in template.html)
   mermaid.min.js               Mermaid diagrams (v12.1.0, from the npm package's dist/)
   emoji.tsv                    shortcode table (from scripts/update-emoji.sh)

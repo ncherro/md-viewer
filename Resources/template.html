@@ -4,60 +4,9 @@
 <meta charset="utf-8">
 <base href="">
 <meta name="color-scheme" content="light dark">
+<!-- Theme colors (CSS variables), generated from Theme.swift and swapped live by mdv.setTheme -->
+<style id="theme">/*THEME_CSS*/</style>
 <style>
-:root {
-  /* Light: Rosé Pine Dawn */
-  --fg: #575279;
-  --fg-strong: #3f3b62;
-  --fg-muted: #797593;
-  --bg: #faf4ed;
-  --bg-subtle: #f4ede8;
-  --border: #dfdad9;
-  --border-muted: #dfdad9b3;
-  --link: #286983;
-  --code-bg: #f2e9e1;
-  --mark-bg: #ea9d3440;
-  --blockquote: #797593;
-  --accent: #d7827e;
-
-  --syn-comment: #9893a5;
-  --syn-keyword: #286983;
-  --syn-string: #ea9d34;
-  --syn-number: #907aa9;
-  --syn-function: #d7827e;
-  --syn-type: #56949f;
-  --syn-variable: #907aa9;
-  --syn-tag: #b4637a;
-  --syn-meta: #b4637a;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* Dark: One Dark Pro */
-    --fg: #abb2bf;
-    --fg-strong: #d7dae0;
-    --fg-muted: #7f848e;
-    --bg: #282c34;
-    --bg-subtle: #21252b;
-    --border: #3e4451;
-    --border-muted: #3e4451b3;
-    --link: #61afef;
-    --code-bg: #3e4451;
-    --mark-bg: #e5c07b40;
-    --blockquote: #7f848e;
-    --accent: #c678dd;
-
-    --syn-comment: #7f848e;
-    --syn-keyword: #c678dd;
-    --syn-string: #98c379;
-    --syn-number: #d19a66;
-    --syn-function: #61afef;
-    --syn-type: #e5c07b;
-    --syn-variable: #e06c75;
-    --syn-tag: #e06c75;
-    --syn-meta: #56b6c2;
-  }
-}
-
 /* Syntax highlighting (highlight.js classes), colored by the theme variables above */
 .hljs { color: var(--fg); }
 .hljs-comment, .hljs-quote { color: var(--syn-comment); font-style: italic; }
@@ -386,6 +335,9 @@ h1:hover .anchor, h2:hover .anchor, h3:hover .anchor, h4:hover .anchor, h5:hover
   });
 
   window.mdv = {
+    setTheme: function (css) {
+      document.getElementById('theme').textContent = css;
+    },
     update: function (html, baseHref, repoRoot, hash) {
       document.querySelector('base').href = baseHref;
       const content = document.getElementById('content');

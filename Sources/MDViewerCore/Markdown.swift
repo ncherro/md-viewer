@@ -4,6 +4,13 @@ import cmark_gfm_extensions
 
 /// Renders GitHub-flavored Markdown to HTML using cmark-gfm (native C, very fast).
 public enum Markdown {
+    /// File extensions treated as Markdown (matches Info.plist).
+    public static let fileExtensions: Set = ["md", "markdown", "mdown", "mkd", "mkdn", "mdwn"]
+
+    public static func isMarkdownFile(_ url: URL) -> Bool {
+        url.isFileURL && fileExtensions.contains(url.pathExtension.lowercased())
+    }
+
     private static let extensionNames = ["table", "strikethrough", "autolink", "tagfilter", "tasklist"]
 
     private static let registered: Void = {

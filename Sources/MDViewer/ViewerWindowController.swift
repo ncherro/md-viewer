@@ -3,7 +3,7 @@ import MDViewerCore
 import WebKit
 
 final class ViewerWindowController: NSWindowController, WKNavigationDelegate, NSSearchFieldDelegate {
-    private let webView: WKWebView
+    private let webView: ViewerWebView
     private let findBar = NSView()
     private let findField = NSSearchField()
     private var findBarHeight: NSLayoutConstraint!
@@ -16,7 +16,7 @@ final class ViewerWindowController: NSWindowController, WKNavigationDelegate, NS
     init() {
         let config = WKWebViewConfiguration()
         config.suppressesIncrementalRendering = true
-        webView = WKWebView(frame: .zero, configuration: config)
+        webView = ViewerWebView(frame: .zero, configuration: config)
         webView.setValue(false, forKey: "drawsBackground") // no white flash in dark mode
 
         let window = NSWindow(
@@ -27,12 +27,8 @@ final class ViewerWindowController: NSWindowController, WKNavigationDelegate, NS
         )
         window.tabbingMode = .preferred
         window.minSize = NSSize(width: 320, height: 240)
-        // Match the page themes in template.html so there's no flash while the page loads.
-        window.backgroundColor = NSColor(name: nil) { appearance in
-            appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
-                ? NSColor(srgbRed: 0x28 / 255.0, green: 0x2c / 255.0, blue: 0x34 / 255.0, alpha: 1) // One Dark Pro
-                : NSColor(srgbRed: 0xfa / 255.0, green: 0xf4 / 255.0, blue: 0xed / 255.0, alpha: 1) // Rosé Pine Dawn
-        }
+        // Match the page theme so there's no flash while the page loads.
+        window.backgroundColor = ThemeSettings.windowBackground
         super.init(window: window)
 
         window.setFrameAutosaveName("MDViewerWindow")
@@ -42,6 +38,8 @@ final class ViewerWindowController: NSWindowController, WKNavigationDelegate, NS
         webView.navigationDelegate = self
         webView.pageZoom = AppSettings.zoom
         webView.loadFileURL(Template.url, allowingReadAccessTo: URL(fileURLWithPath: "/"))
+
+        NotificationCenter.default.addObserver(self, selector: #selector(themeDidChange), name: ThemeSettings.didChange, object: nil)
     }
 
     required init?(coder: NSCoder) { fatalError() }
@@ -133,9 +131,15 @@ final class ViewerWindowController: NSWindowController, WKNavigationDelegate, NS
         RepoRoot.find(from: $0.deletingLastPathComponent())
     }
 
+    @objc private func themeDidChange() {
+        window?.backgroundColor = ThemeSettings.windowBackground
+        if shellLoaded { webView.setTheme(ThemeSettings.css) }
+    }
+
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         guard !shellLoaded else { return }
         shellLoaded = true
+        self.webView.setTheme(ThemeSettings.css) // in case it changed while the shell was loading
         if pendingRender || markdownDocument != nil {
             pendingRender = false
             render()
@@ -157,7 +161,7 @@ final class ViewerWindowController: NSWindowController, WKNavigationDelegate, NS
             target = root.appendingPathComponent(url.path)
         }
 
-        if target.isFileURL, ["md", "markdown", "mdown", "mkd", "mkdn", "mdwn"].contains(target.pathExtension.lowercased()) {
+        if Markdown.isMarkdownFile(target) {
             // Link to another Markdown file: open it in this app.
             NSDocumentController.shared.openDocument(withContentsOf: target, display: true) { _, _, error in
                 if let error { NSApp.presentError(error) }

@@ -9,6 +9,7 @@ enum MainMenu {
         let app = submenu(appName, in: main)
         app.addItem(withTitle: "About \(appName)", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
         app.addItem(.separator())
+        app.addItem(withTitle: "Settings…", action: #selector(AppDelegate.showSettings(_:)), keyEquivalent: ",")
         app.addItem(withTitle: "Make Default Markdown Viewer", action: #selector(AppDelegate.makeDefaultViewer(_:)), keyEquivalent: "")
         app.addItem(.separator())
         let services = NSMenuItem(title: "Services", action: nil, keyEquivalent: "")

@@ -69,6 +69,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         applyAppearance()
     }
 
+    // MARK: Settings (themes)
+
+    private lazy var settingsWindow = SettingsWindowController()
+
+    @objc func showSettings(_ sender: Any?) {
+        settingsWindow.showWindow(sender)
+    }
+
     // MARK: Zoom (global, applies to all windows)
 
     @objc func increaseZoom(_ sender: Any?) { setZoom(AppSettings.zoom * 1.1) }
