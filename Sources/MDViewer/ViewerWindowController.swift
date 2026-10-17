@@ -184,6 +184,11 @@ final class ViewerWindowController: NSWindowController, WKNavigationDelegate, NS
 
     func printOperation(settings: [NSPrintInfo.AttributeKey: Any]) -> NSPrintOperation {
         let info = NSPrintInfo(dictionary: settings)
+        // AppKit defaults to 1" margins on every side; half an inch reads better for text.
+        info.topMargin = 36
+        info.bottomMargin = 36
+        info.leftMargin = 36
+        info.rightMargin = 36
         let op = webView.printOperation(with: info)
         op.view?.frame = webView.bounds
         return op

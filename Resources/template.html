@@ -38,6 +38,13 @@ body {
 #content > *:first-child { margin-top: 0 !important; }
 #content > *:last-child { margin-bottom: 0 !important; }
 
+@media print {
+  body { padding: 0; font-size: 11pt; line-height: 1.5; }
+  #content { max-width: none; }
+  pre, blockquote, table, img, .mermaid-diagram { break-inside: avoid; }
+  h1, h2, h3, h4, h5, h6 { break-after: avoid; }
+}
+
 a { color: var(--link); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
