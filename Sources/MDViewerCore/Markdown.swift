@@ -17,11 +17,14 @@ public enum Markdown {
         cmark_gfm_core_extensions_ensure_registered()
     }()
 
-    public static func render(_ source: String, emoji: EmojiTable = .bundled) -> String {
+    /// With `sourcePositions`, block elements get a `data-sourcepos="line:col-line:col"` attribute
+    /// (1-based lines of `source`, front matter included), which the page uses to copy Markdown.
+    public static func render(_ source: String, emoji: EmojiTable = .bundled, sourcePositions: Bool = false) -> String {
         _ = registered
         let (frontMatter, body) = splitFrontMatter(source)
 
-        let options = CMARK_OPT_UNSAFE | CMARK_OPT_FOOTNOTES | CMARK_OPT_STRIKETHROUGH_DOUBLE_TILDE
+        var options = CMARK_OPT_UNSAFE | CMARK_OPT_FOOTNOTES | CMARK_OPT_STRIKETHROUGH_DOUBLE_TILDE
+        if sourcePositions { options |= CMARK_OPT_SOURCEPOS }
         guard let parser = cmark_parser_new(options) else { return "" }
         defer { cmark_parser_free(parser) }
 
@@ -76,6 +79,7 @@ public enum Markdown {
     }
 
     /// Pulls a leading YAML front-matter block (`---` … `---`) out so it doesn't render as an hr + heading.
+    /// The body keeps a blank line per front-matter line, so source positions still match `source`.
     private static func splitFrontMatter(_ source: String) -> (String?, String) {
         guard source.hasPrefix("---\n") || source.hasPrefix("---\r\n") else { return (nil, source) }
         let lines = source.split(separator: "\n", omittingEmptySubsequences: false)
@@ -84,7 +88,7 @@ public enum Markdown {
             if line == "---" || line == "..." {
                 let fm = lines[1..<i].joined(separator: "\n")
                 let rest = lines[(i + 1)...].joined(separator: "\n")
-                return (fm, rest)
+                return (fm, String(repeating: "\n", count: i + 1) + rest)
             }
         }
         return (nil, source)

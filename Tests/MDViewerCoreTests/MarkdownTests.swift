@@ -88,6 +88,20 @@ import Testing
         #expect(html.contains("<hr />"))
     }
 
+    // MARK: Source positions (used by the page to copy sections and code blocks)
+
+    @Test func sourcePositionsAreOptIn() {
+        #expect(!Fixtures.render("# Title").contains("data-sourcepos"))
+        let html = Markdown.render("# Title\n\n```\ncode\n```", emoji: Fixtures.emoji, sourcePositions: true)
+        #expect(html.contains("<h1 data-sourcepos=\"1:1-1:7\">Title</h1>"))
+        #expect(html.contains("<pre data-sourcepos=\"3:1-5:3\"><code>code\n</code></pre>"))
+    }
+
+    @Test func sourcePositionsCountFrontMatterLines() {
+        let html = Markdown.render("---\na: 1\n---\n# Body", emoji: Fixtures.emoji, sourcePositions: true)
+        #expect(html.contains("<h1 data-sourcepos=\"4:1-4:6\">Body</h1>"))
+    }
+
     @Test func emptyInput() {
         #expect(Fixtures.render("") == "")
     }
