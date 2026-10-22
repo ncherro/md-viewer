@@ -46,6 +46,8 @@ enum MainMenu {
         // Edit
         let edit = submenu("Edit", in: main)
         edit.addItem(withTitle: "Copy", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
+        edit.addItem(withTitle: "Copy Markdown", action: #selector(ViewerWindowController.copyMarkdown(_:)), keyEquivalent: "c")
+            .keyEquivalentModifierMask = [.command, .option]
         edit.addItem(withTitle: "Select All", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
         edit.addItem(.separator())
         let find = NSMenuItem(title: "Find", action: nil, keyEquivalent: "")

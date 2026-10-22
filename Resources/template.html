@@ -43,6 +43,7 @@ body {
   #content { max-width: none; }
   pre, blockquote, table, img, .mermaid-diagram { break-inside: avoid; }
   h1, h2, h3, h4, h5, h6 { break-after: avoid; }
+  .copy { display: none !important; }
 }
 
 a { color: var(--link); text-decoration: none; }
@@ -133,6 +134,27 @@ h1:hover .anchor, h2:hover .anchor, h3:hover .anchor, h4:hover .anchor, h5:hover
 /* GitHub's theme-specific image fragments */
 @media (prefers-color-scheme: dark) { img[src$="#gh-light-mode-only"] { display: none; } }
 @media not (prefers-color-scheme: dark) { img[src$="#gh-dark-mode-only"] { display: none; } }
+
+/* Copy-as-Markdown buttons: the whole doc (top right), a heading's section, a code block */
+.copy {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; padding: 0;
+  color: var(--fg-muted); background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+  cursor: pointer; opacity: 0; transition: opacity .15s;
+}
+.copy svg { width: 16px; height: 16px; fill: currentColor; }
+.copy:hover { color: var(--fg-strong); }
+.copy.copied { color: var(--accent); opacity: 1; }
+.copy-doc { position: fixed; top: 8px; right: 8px; z-index: 1; }
+html:hover .copy-doc { opacity: .6; }
+.copy-doc:hover { opacity: 1 !important; }
+.copy-section { margin-left: 8px; vertical-align: middle; border-color: transparent; background: transparent; }
+h1:hover .copy-section, h2:hover .copy-section, h3:hover .copy-section,
+h4:hover .copy-section, h5:hover .copy-section, h6:hover .copy-section { opacity: 1; }
+.code-block { position: relative; margin: 0 0 16px; }
+.code-block > pre { margin: 0; }
+.copy-code { position: absolute; top: 8px; right: 8px; }
+.code-block:hover .copy-code { opacity: 1; }
 
 .error { color: #d1242f; font-family: ui-monospace, Menlo, monospace; }
 
@@ -291,6 +313,60 @@ h1:hover .anchor, h2:hover .anchor, h3:hover .anchor, h4:hover .anchor, h5:hover
     });
   }
 
+  // Copy buttons. The page gets the Markdown source plus `data-sourcepos` line ranges on
+  // block elements, so a heading copies its source lines up to the next heading of the
+  // same or higher level. The clipboard write is done natively (WKScriptMessageHandler).
+  const COPY_ICON = '<svg viewBox="0 0 16 16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/></svg>';
+  const CHECK_ICON = '<svg viewBox="0 0 16 16"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>';
+  let source = '';
+  let sourceLines = [];
+
+  function copyButton(className, label, getText) {
+    const b = document.createElement('button');
+    b.className = 'copy ' + className;
+    b.title = label;
+    b.setAttribute('aria-label', label);
+    b.innerHTML = COPY_ICON;
+    b.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      window.webkit.messageHandlers.copy.postMessage(getText());
+      b.classList.add('copied');
+      b.innerHTML = CHECK_ICON;
+      clearTimeout(b.resetTimer);
+      b.resetTimer = setTimeout(function () { b.classList.remove('copied'); b.innerHTML = COPY_ICON; }, 1200);
+    });
+    return b;
+  }
+
+  function startLine(el) { return parseInt(el.dataset.sourcepos, 10); }
+
+  // Lines first..last (1-based, inclusive), without trailing blank lines.
+  function sourceRange(first, last) {
+    const lines = sourceLines.slice(first - 1, last);
+    while (lines.length && !lines[lines.length - 1].trim()) lines.pop();
+    return lines.join('\n') + '\n';
+  }
+
+  function addCopyButtons(root) {
+    const headings = Array.from(root.querySelectorAll(':scope > :is(h1, h2, h3, h4, h5, h6)[data-sourcepos]'));
+    headings.forEach(function (h, i) {
+      const level = +h.tagName[1];
+      const next = headings.slice(i + 1).find(function (n) { return +n.tagName[1] <= level; });
+      const last = next ? startLine(next) - 1 : sourceLines.length;
+      h.appendChild(copyButton('copy-section', 'Copy section as Markdown', function () {
+        return sourceRange(startLine(h), last);
+      }));
+    });
+    root.querySelectorAll('pre').forEach(function (pre) {
+      if (pre.closest('.mermaid-diagram')) return;
+      const wrap = document.createElement('div');
+      wrap.className = 'code-block';
+      pre.replaceWith(wrap);
+      wrap.append(pre, copyButton('copy-code', 'Copy code', function () { return pre.textContent; }));
+    });
+  }
+
   function scrollToHash(hash) {
     if (!hash || hash === '#') { window.scrollTo(0, 0); return; }
     const id = decodeURIComponent(hash.slice(1));
@@ -345,13 +421,15 @@ h1:hover .anchor, h2:hover .anchor, h3:hover .anchor, h4:hover .anchor, h5:hover
     setTheme: function (css) {
       document.getElementById('theme').textContent = css;
     },
-    update: function (html, baseHref, repoRoot, hash) {
+    update: function (html, markdown, baseHref, repoRoot, hash) {
       document.querySelector('base').href = baseHref;
       const content = document.getElementById('content');
       const y = window.scrollY;
       const first = !content.hasChildNodes();
       content.innerHTML = html;
       currentRepoRoot = repoRoot;
+      source = markdown;
+      sourceLines = markdown.split(/\r?\n/);
       content.querySelectorAll('img').forEach(function (img) {
         if (!img.closest('picture')) fixImage(img, repoRoot);
       });
@@ -359,6 +437,7 @@ h1:hover .anchor, h2:hover .anchor, h3:hover .anchor, h4:hover .anchor, h5:hover
       addHeadingIds(content);
       prepareDiagrams(content);
       highlight(content);
+      addCopyButtons(content);
       const restore = first && hash
         ? function () { scrollToHash(hash); }
         : function () { window.scrollTo(0, y); }; // keep position on live reload
@@ -368,6 +447,10 @@ h1:hover .anchor, h2:hover .anchor, h3:hover .anchor, h4:hover .anchor, h5:hover
       renderDiagrams(content, false).then(function () { if (window.scrollY === before) restore(); });
     }
   };
+
+  document.addEventListener('DOMContentLoaded', function () {
+    document.body.appendChild(copyButton('copy-doc', 'Copy document as Markdown', function () { return source; }));
+  });
 
   // In-page anchors: resolve against the page, not the <base> dir.
   document.addEventListener('click', function (e) {

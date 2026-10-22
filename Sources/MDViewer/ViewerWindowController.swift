@@ -16,6 +16,7 @@ final class ViewerWindowController: NSWindowController, WKNavigationDelegate, NS
     init() {
         let config = WKWebViewConfiguration()
         config.suppressesIncrementalRendering = true
+        config.userContentController.add(CopyHandler(), name: "copy")
         webView = ViewerWebView(frame: .zero, configuration: config)
         webView.setValue(false, forKey: "drawsBackground") // no white flash in dark mode
 
@@ -115,11 +116,11 @@ final class ViewerWindowController: NSWindowController, WKNavigationDelegate, NS
         guard shellLoaded else { pendingRender = true; return }
         guard let doc = markdownDocument, let url = doc.fileURL else { return }
 
-        let html = Markdown.render(doc.text)
+        let html = Markdown.render(doc.text, sourcePositions: true)
         let base = url.deletingLastPathComponent().absoluteString
-        let args: [String: Any] = ["html": html, "base": base, "root": repoRoot?.absoluteString ?? "", "hash": ""]
+        let args: [String: Any] = ["html": html, "markdown": doc.text, "base": base, "root": repoRoot?.absoluteString ?? "", "hash": ""]
         webView.callAsyncJavaScript(
-            "mdv.update(html, base, root, hash)",
+            "mdv.update(html, markdown, base, root, hash)",
             arguments: args,
             in: nil,
             in: .page,
@@ -182,6 +183,11 @@ final class ViewerWindowController: NSWindowController, WKNavigationDelegate, NS
         if markdownDocument?.reloadFromDisk() == true { render() }
     }
 
+    @objc func copyMarkdown(_ sender: Any?) {
+        guard let text = markdownDocument?.text else { return }
+        CopyHandler.copy(text)
+    }
+
     func printOperation(settings: [NSPrintInfo.AttributeKey: Any]) -> NSPrintOperation {
         let info = NSPrintInfo(dictionary: settings)
         // AppKit defaults to 1" margins on every side; half an inch reads better for text.
@@ -238,5 +244,18 @@ final class ViewerWindowController: NSWindowController, WKNavigationDelegate, NS
             return true
         }
         return false
+    }
+}
+
+/// Clipboard writes from the page's copy buttons (`webkit.messageHandlers.copy`).
+/// Separate from the window controller because the content controller retains it.
+private final class CopyHandler: NSObject, WKScriptMessageHandler {
+    static func copy(_ text: String) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
+    }
+
+    func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
+        if let text = message.body as? String { Self.copy(text) }
     }
 }
